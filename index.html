@@ -209,7 +209,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
         <div class="ai-label">IA online</div>
       </div>
       <div class="ai-body">
-        <div class="ai-response" id="aiResp">Olá! Estou aqui para te ajudar. Pergunte sobre suas tarefas, campanhas de Meta Ads, ou peça sugestões de prioridade.</div>
+        <div class="ai-response" id="aiResp">Olá! Digite sua pergunta abaixo e vou abrir o Claude com o contexto das suas tarefas já preenchido. Ou clique em ✨ em qualquer tarefa para obter ajuda específica.</div>
         <div class="ai-input-row">
           <input class="ai-input" type="text" id="aiInput" placeholder="Pergunte algo..." onkeydown="if(event.key==='Enter')askAI()"/>
           <button class="ai-send" onclick="askAI()">↑</button>
@@ -231,7 +231,7 @@ let tasks = JSON.parse(localStorage.getItem('tasks') || 'null') || [
 ];
 let nextId = Math.max(...tasks.map(t=>t.id))+1;
 let currentTab = 'todas';
-const ANTHROPIC_KEY = ''; // Coloque sua chave API aqui
+// Modo gratuito: abre o Claude com o contexto da tarefa
 
 function dt(h,m){const d=new Date();d.setHours(h,m,0,0);return d.toISOString().slice(0,16);}
 function dt2(h,m){const d=new Date();d.setDate(d.getDate()+1);d.setHours(h,m,0,0);return d.toISOString().slice(0,16);}
@@ -325,39 +325,31 @@ function addTask(){
 }
 
 // --- AI ---
-async function callAI(systemPrompt, userMsg){
-  const resp=document.getElementById('aiResp');
-  resp.className='ai-response thinking';
-  resp.textContent='Pensando...';
-  try{
-    const tasksSummary=tasks.map(t=>`[${t.done?'✓':t.priority==='urgente?'⚠':'○'}] ${t.title} (${t.cat}) ${t.date?'- '+fmtDate(t.date):''}`).join('\n');
-    const r=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_KEY,'anthropic-version':'2023-06-01'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:systemPrompt+'\n\nTarefas atuais:\n'+tasksSummary,messages:[{role:'user',content:userMsg}]})
-    });
-    const data=await r.json();
-    const text=data.content?.find(b=>b.type==='text')?.text||'Não consegui responder agora.';
-    resp.className='ai-response';
-    resp.textContent=text;
-  }catch(e){
-    resp.className='ai-response';
-    resp.textContent='Erro de conexão. Verifique sua chave de API no arquivo index.html.';
-  }
+function openClaude(msg){
+  const encoded=encodeURIComponent(msg);
+  window.open('https://claude.ai/new?q='+encoded,'_blank');
 }
 
-async function askAI(){
+function tasksSummary(){
+  return tasks.filter(t=>!t.done).map(t=>`[${t.priority==='urgente'?'⚠ URGENTE':'○'}] ${t.title} (${t.cat})${t.date?' - '+fmtDate(t.date):''}`).join('\n');
+}
+
+function askAI(){
   const input=document.getElementById('aiInput');
   const q=input.value.trim();if(!q)return;
+  const resp=document.getElementById('aiResp');
+  resp.className='ai-response thinking';
+  resp.textContent='Abrindo o Claude com sua pergunta...';
+  setTimeout(()=>{resp.className='ai-response';resp.textContent='Pergunta enviada! Veja a resposta no Claude que abriu.';},1500);
+  const msg=`Minhas tarefas pendentes:\n${tasksSummary()}\n\nMinha pergunta: ${q}`;
   input.value='';
-  await callAI('Você é um assistente pessoal especializado em gestão de tarefas e campanhas de Meta Ads. Responda de forma direta, prática e em português.',q);
+  openClaude(msg);
 }
 
-async function aiTask(id){
+function aiTask(id){
   const t=tasks.find(t=>t.id===id);if(!t)return;
-  await callAI('Você é um assistente pessoal especializado em gestão de tarefas e Meta Ads. Responda de forma direta e prática em português.',
-    `Me ajude com a tarefa: "${t.title}" (${t.cat}, ${t.priority}). O que devo fazer e como executar de forma eficiente?`);
-  document.getElementById('aiInput').scrollIntoView({behavior:'smooth'});
+  const msg=`Sou gestora de tráfego e tenho esta tarefa pendente:\n\nTarefa: "${t.title}"\nCategoria: ${t.cat}\nPrioridade: ${t.priority}${t.date?'\nHorário: '+fmtDate(t.date):''}\n\nMe ajude com dicas práticas de como executar essa tarefa de forma eficiente.`;
+  openClaude(msg);
 }
 
 // --- Service Worker ---

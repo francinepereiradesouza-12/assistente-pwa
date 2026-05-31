@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="theme-color" content="#0f0f0f"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Assistente"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icons/icon-192.png"/>
+<title>Assistente Pessoal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #0f0f0f;
+  --surface: #1a1a1a;
+  --surface2: #222222;
+  --surface3: #2a2a2a;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.14);
+  --text: #f0f0f0;
+  --text2: #888;
+  --text3: #555;
+  --accent: #7c6aff;
+  --accent-dim: rgba(124,106,255,0.15);
+  --accent-border: rgba(124,106,255,0.35);
+  --green: #34d399;
+  --green-dim: rgba(52,211,153,0.12);
+  --red: #f87171;
+  --red-dim: rgba(248,113,113,0.12);
+  --amber: #fbbf24;
+  --amber-dim: rgba(251,191,36,0.12);
+  --blue: #60a5fa;
+  --blue-dim: rgba(96,165,250,0.12);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; overflow: hidden; }
+
+/* Layout */
+.app { display: flex; flex-direction: column; height: 100dvh; }
+.topbar {
+  padding: calc(var(--safe-top) + 16px) 20px 16px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.topbar-title { font-size: 17px; font-weight: 600; letter-spacing: -0.3px; }
+.topbar-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.topbar-icon { width: 36px; height: 36px; border-radius: 10px; background: var(--accent-dim); border: 1px solid var(--accent-border); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+
+.scroll-area { flex: 1; overflow-y: auto; padding: 16px 20px; -webkit-overflow-scrolling: touch; }
+.scroll-area::-webkit-scrollbar { display: none; }
+
+/* Stats */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
+.stat { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 8px; text-align: center; }
+.stat-n { font-size: 22px; font-weight: 600; line-height: 1; margin-bottom: 4px; }
+.stat-l { font-size: 10px; color: var(--text2); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Tabs */
+.tabs { display: flex; gap: 6px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 2px; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { flex-shrink: 0; font-size: 12px; font-weight: 500; padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border); background: transparent; color: var(--text2); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+.tab.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent-border); }
+
+/* Tasks */
+.section-label { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+.task-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+.task {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  transition: border-color 0.15s, opacity 0.2s;
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.task.done { opacity: 0.4; }
+.task.urgent { border-left: 2px solid var(--red); }
+.check {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 1.5px solid var(--border2);
+  flex-shrink: 0; margin-top: 1px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.15s;
+}
+.check.on { background: var(--green); border-color: var(--green); }
+.check.on::after { content: '✓'; font-size: 12px; color: #0f0f0f; font-weight: 700; }
+.task-body { flex: 1; min-width: 0; }
+.task-name { font-size: 14px; font-weight: 500; color: var(--text); line-height: 1.4; margin-bottom: 6px; }
+.task.done .task-name { text-decoration: line-through; color: var(--text3); }
+.task-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.pill { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 20px; letter-spacing: 0.3px; }
+.pill-meta { background: var(--blue-dim); color: var(--blue); }
+.pill-reuniao { background: var(--amber-dim); color: var(--amber); }
+.pill-pessoal { background: var(--green-dim); color: var(--green); }
+.pill-relatorio { background: rgba(167,139,250,0.12); color: #a78bfa; }
+.pill-urg { background: var(--red-dim); color: var(--red); }
+.time-label { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; }
+.task-ai-btn { background: transparent; border: none; color: var(--text3); font-size: 18px; padding: 4px; cursor: pointer; flex-shrink: 0; transition: color 0.15s; border-radius: 8px; }
+.task-ai-btn:active { color: var(--accent); }
+.del-btn { background: transparent; border: none; color: var(--text3); font-size: 16px; padding: 4px; cursor: pointer; flex-shrink: 0; transition: color 0.15s; border-radius: 8px; }
+.del-btn:active { color: var(--red); }
+
+/* Add form */
+.add-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 14px; margin-bottom: 20px; }
+.add-card input, .add-card select {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+  color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px;
+  padding: 10px 12px; margin-bottom: 8px; outline: none;
+  transition: border-color 0.15s;
+}
+.add-card input:focus, .add-card select:focus { border-color: var(--accent-border); }
+.add-card select option { background: #1a1a1a; }
+.add-row { display: flex; gap: 8px; }
+.add-row select { flex: 1; margin-bottom: 0; }
+.add-btn {
+  width: 100%; margin-top: 10px; padding: 12px;
+  background: var(--accent); color: #fff; font-family: 'DM Sans', sans-serif;
+  font-size: 14px; font-weight: 600; border: none; border-radius: 12px; cursor: pointer;
+  transition: opacity 0.15s; letter-spacing: -0.2px;
+}
+.add-btn:active { opacity: 0.8; }
+
+/* AI Panel */
+.ai-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: calc(var(--safe-bottom) + 8px); }
+.ai-header { padding: 12px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+.ai-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.ai-label { font-size: 13px; font-weight: 600; color: var(--text); }
+.ai-body { padding: 12px 14px; }
+.ai-response { font-size: 13px; color: var(--text2); line-height: 1.7; min-height: 44px; margin-bottom: 10px; }
+.ai-response.thinking { color: var(--accent); font-style: italic; }
+.ai-input-row { display: flex; gap: 8px; }
+.ai-input {
+  flex: 1; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text); font-family: 'DM Sans', sans-serif;
+  font-size: 13px; padding: 9px 12px; outline: none; transition: border-color 0.15s;
+}
+.ai-input:focus { border-color: var(--accent-border); }
+.ai-send {
+  width: 38px; height: 38px; border-radius: 10px; background: var(--accent);
+  border: none; color: #fff; font-size: 16px; cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; transition: opacity 0.15s;
+}
+.ai-send:active { opacity: 0.7; }
+
+/* Empty */
+.empty { text-align: center; padding: 32px 20px; color: var(--text3); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Assistente Pessoal</div>
+      <div class="topbar-sub" id="dateLabel"></div>
+    </div>
+    <div class="topbar-icon">⚡</div>
+  </div>
+
+  <div class="scroll-area">
+    <div class="stats" id="statsEl"></div>
+
+    <div class="tabs" id="tabsEl">
+      <button class="tab active" onclick="setTab('todas',this)">Todas</button>
+      <button class="tab" onclick="setTab('Meta Ads',this)">📊 Meta Ads</button>
+      <button class="tab" onclick="setTab('Reunião',this)">🤝 Reuniões</button>
+      <button class="tab" onclick="setTab('Pessoal',this)">🙋 Pessoal</button>
+      <button class="tab" onclick="setTab('Relatório',this)">📄 Relatórios</button>
+      <button class="tab" onclick="setTab('urgente',this)">🔴 Urgentes</button>
+    </div>
+
+    <div class="section-label" id="sectionLabel">Pendentes</div>
+    <div class="task-list" id="taskList"></div>
+
+    <div class="section-label">Adicionar tarefa</div>
+    <div class="add-card">
+      <input type="text" id="newTitle" placeholder="Nome da tarefa..."/>
+      <div class="add-row">
+        <select id="newCat">
+          <option value="Meta Ads">Meta Ads</option>
+          <option value="Reunião">Reunião</option>
+          <option value="Pessoal">Pessoal</option>
+          <option value="Relatório">Relatório</option>
+        </select>
+        <select id="newPriority">
+          <option value="normal">Normal</option>
+          <option value="urgente">🔴 Urgente</option>
+        </select>
+      </div>
+      <input type="datetime-local" id="newDate"/>
+      <button class="add-btn" onclick="addTask()">+ Adicionar tarefa</button>
+    </div>
+
+    <div class="section-label">Assistente IA</div>
+    <div class="ai-card">
+      <div class="ai-header">
+        <div class="ai-dot"></div>
+        <div class="ai-label">IA online</div>
+      </div>
+      <div class="ai-body">
+        <div class="ai-response" id="aiResp">Olá! Estou aqui para te ajudar. Pergunte sobre suas tarefas, campanhas de Meta Ads, ou peça sugestões de prioridade.</div>
+        <div class="ai-input-row">
+          <input class="ai-input" type="text" id="aiInput" placeholder="Pergunte algo..." onkeydown="if(event.key==='Enter')askAI()"/>
+          <button class="ai-send" onclick="askAI()">↑</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// --- State ---
+let tasks = JSON.parse(localStorage.getItem('tasks') || 'null') || [
+  {id:1,title:'Revisar performance das campanhas de tráfego',cat:'Meta Ads',priority:'urgente',date:dt(9,0),done:false},
+  {id:2,title:'Reunião de alinhamento com cliente',cat:'Reunião',priority:'urgente',date:dt(14,0),done:false},
+  {id:3,title:'Entregar relatório mensal de resultados',cat:'Relatório',priority:'urgente',date:dt(17,0),done:false},
+  {id:4,title:'Otimizar criativos das campanhas de conversão',cat:'Meta Ads',priority:'normal',date:dt2(10,0),done:false},
+  {id:5,title:'Configurar novos públicos personalizados',cat:'Meta Ads',priority:'normal',date:dt2(15,0),done:false},
+  {id:6,title:'Academia',cat:'Pessoal',priority:'normal',date:dt(7,0),done:true},
+];
+let nextId = Math.max(...tasks.map(t=>t.id))+1;
+let currentTab = 'todas';
+const ANTHROPIC_KEY = ''; // Coloque sua chave API aqui
+
+function dt(h,m){const d=new Date();d.setHours(h,m,0,0);return d.toISOString().slice(0,16);}
+function dt2(h,m){const d=new Date();d.setDate(d.getDate()+1);d.setHours(h,m,0,0);return d.toISOString().slice(0,16);}
+
+function save(){localStorage.setItem('tasks',JSON.stringify(tasks));}
+
+// --- Date label ---
+const days=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+const months=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const now=new Date();
+document.getElementById('dateLabel').textContent=`${days[now.getDay()]}, ${now.getDate()} de ${months[now.getMonth()]}`;
+
+// --- Format ---
+function fmtDate(iso){
+  if(!iso)return'';
+  const d=new Date(iso),n=new Date();
+  const tm=d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  if(d.toDateString()===n.toDateString())return`Hoje ${tm}`;
+  const t=new Date(n);t.setDate(n.getDate()+1);
+  if(d.toDateString()===t.toDateString())return`Amanhã ${tm}`;
+  return`${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')} ${tm}`;
+}
+function catPill(cat){
+  const m={'Meta Ads':'pill-meta','Reunião':'pill-reuniao','Pessoal':'pill-pessoal','Relatório':'pill-relatorio'};
+  return`<span class="pill ${m[cat]||'pill-meta'}">${cat}</span>`;
+}
+
+// --- Render ---
+function render(){
+  // Stats
+  const tot=tasks.length,done=tasks.filter(t=>t.done).length;
+  const urg=tasks.filter(t=>t.priority==='urgente'&&!t.done).length;
+  const todayN=tasks.filter(t=>{
+    if(!t.date||t.done)return false;
+    return new Date(t.date).toDateString()===new Date().toDateString();
+  }).length;
+  document.getElementById('statsEl').innerHTML=`
+    <div class="stat"><div class="stat-n">${tot}</div><div class="stat-l">Total</div></div>
+    <div class="stat"><div class="stat-n" style="color:var(--blue)">${todayN}</div><div class="stat-l">Hoje</div></div>
+    <div class="stat"><div class="stat-n" style="color:var(--red)">${urg}</div><div class="stat-l">Urgentes</div></div>
+    <div class="stat"><div class="stat-n" style="color:var(--green)">${done}</div><div class="stat-l">Feitas</div></div>
+  `;
+
+  // Tasks
+  let list=[...tasks];
+  if(currentTab==='urgente') list=list.filter(t=>t.priority==='urgente');
+  else if(currentTab!=='todas') list=list.filter(t=>t.cat===currentTab);
+  list.sort((a,b)=>{
+    if(a.done!==b.done)return a.done?1:-1;
+    if(a.priority!==b.priority)return a.priority==='urgente'?-1:1;
+    return(a.date||'').localeCompare(b.date||'');
+  });
+
+  const pending=list.filter(t=>!t.done),done2=list.filter(t=>t.done);
+  let html='';
+  if(pending.length===0&&done2.length===0){html='<div class="empty">Nenhuma tarefa aqui 🎉</div>';}
+  else{
+    pending.forEach(t=>{html+=taskHTML(t);});
+    if(done2.length){html+=`<div class="section-label" style="margin-top:16px">Concluídas</div>`;done2.forEach(t=>{html+=taskHTML(t);});}
+  }
+  document.getElementById('taskList').innerHTML=html;
+}
+
+function taskHTML(t){
+  return`<div class="task${t.done?' done':''}${t.priority==='urgente'&&!t.done?' urgent':''}">
+    <div class="check${t.done?' on':''}" onclick="toggle(${t.id})"></div>
+    <div class="task-body">
+      <div class="task-name">${t.title}</div>
+      <div class="task-meta">
+        ${catPill(t.cat)}
+        ${t.priority==='urgente'&&!t.done?'<span class="pill pill-urg">Urgente</span>':''}
+        ${t.date?`<span class="time-label">${fmtDate(t.date)}</span>`:''}
+      </div>
+    </div>
+    <button class="task-ai-btn" onclick="aiTask(${t.id})" title="Pedir ajuda da IA">✨</button>
+    <button class="del-btn" onclick="del(${t.id})" title="Remover">×</button>
+  </div>`;
+}
+
+function toggle(id){const t=tasks.find(t=>t.id===id);if(t){t.done=!t.done;save();render();}}
+function del(id){tasks=tasks.filter(t=>t.id!==id);save();render();}
+function setTab(tab,el){currentTab=tab;document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));el.classList.add('active');render();}
+
+function addTask(){
+  const title=document.getElementById('newTitle').value.trim();
+  if(!title)return;
+  tasks.push({id:nextId++,title,cat:document.getElementById('newCat').value,priority:document.getElementById('newPriority').value,date:document.getElementById('newDate').value||'',done:false});
+  document.getElementById('newTitle').value='';
+  document.getElementById('newDate').value='';
+  save();render();
+}
+
+// --- AI ---
+async function callAI(systemPrompt, userMsg){
+  const resp=document.getElementById('aiResp');
+  resp.className='ai-response thinking';
+  resp.textContent='Pensando...';
+  try{
+    const tasksSummary=tasks.map(t=>`[${t.done?'✓':t.priority==='urgente?'⚠':'○'}] ${t.title} (${t.cat}) ${t.date?'- '+fmtDate(t.date):''}`).join('\n');
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_KEY,'anthropic-version':'2023-06-01'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:systemPrompt+'\n\nTarefas atuais:\n'+tasksSummary,messages:[{role:'user',content:userMsg}]})
+    });
+    const data=await r.json();
+    const text=data.content?.find(b=>b.type==='text')?.text||'Não consegui responder agora.';
+    resp.className='ai-response';
+    resp.textContent=text;
+  }catch(e){
+    resp.className='ai-response';
+    resp.textContent='Erro de conexão. Verifique sua chave de API no arquivo index.html.';
+  }
+}
+
+async function askAI(){
+  const input=document.getElementById('aiInput');
+  const q=input.value.trim();if(!q)return;
+  input.value='';
+  await callAI('Você é um assistente pessoal especializado em gestão de tarefas e campanhas de Meta Ads. Responda de forma direta, prática e em português.',q);
+}
+
+async function aiTask(id){
+  const t=tasks.find(t=>t.id===id);if(!t)return;
+  await callAI('Você é um assistente pessoal especializado em gestão de tarefas e Meta Ads. Responda de forma direta e prática em português.',
+    `Me ajude com a tarefa: "${t.title}" (${t.cat}, ${t.priority}). O que devo fazer e como executar de forma eficiente?`);
+  document.getElementById('aiInput').scrollIntoView({behavior:'smooth'});
+}
+
+// --- Service Worker ---
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+
+render();
+</script>
+</body>
+</html>
